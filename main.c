@@ -5,7 +5,6 @@
 #include <string.h>     // for memset
 #include <netdb.h>      // for addrinfo
 #include <errno.h>      // for erno
-#include <pthread.h>    // for threading
 
 #define PORT "8080"
 #define BACKLOG 3
