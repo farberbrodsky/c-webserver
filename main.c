@@ -4,13 +4,13 @@
 #include <sys/socket.h> // for socket
 #include <string.h>     // for memset
 #include <netdb.h>      // for addrinfo
-#include <errno.h>
+#include <errno.h>      // for erno
 
 #define PORT "8080"
 #define BACKLOG 3
 
-const char notfound_message[] = "HTTP/1.1 404 Not Found\r\n\r\nNot Found";
-const char ok_message[] = "HTTP/1.1 200 OK\r\n\r\n";
+const char notfound_message[] = "HTTP/1.1 404 Not Found\r\nContent-Type:text/plain\r\n\r\nNot Found";
+const char ok_message[] = "HTTP/1.1 200 OK\r\nContent-Type:";
 
 char * gnu_getcwd () {
     size_t size = 100;
@@ -24,6 +24,19 @@ char * gnu_getcwd () {
             return 0;
         size *= 2;
     }
+}
+
+char* get_mime_type(char* file_extension) {
+    if (file_extension == NULL) {
+        return "text/plain";
+    } else if (!strcmp(file_extension, ".html")) {
+        return "text/html";
+    } else if (!strcmp(file_extension, ".css")) {
+        return "text/css";
+    } else if (!strcmp(file_extension, ".js")) {
+        return "application/javascript";
+    }
+    return "text/plain";
 }
 
 void accept_client(int sock_fd)
@@ -55,10 +68,15 @@ void accept_client(int sock_fd)
         if (file == NULL) {
             write(peer_fd, notfound_message, sizeof(notfound_message) - 1);
         } else {
+            write(peer_fd, ok_message, sizeof(ok_message) - 1);
+            // find mime type
+            char* mime_type = get_mime_type(strstr(cwd, "."));
+            write(peer_fd, mime_type, strlen(mime_type));
+            write(peer_fd, "\r\n\r\n", 4);
             char buff[2048];
             size_t bytes_read = fread(buff, sizeof(char), sizeof(buff), file);
             while (bytes_read != 0) {
-                write(peer_fd, buff, 2048);
+                write(peer_fd, buff, bytes_read);
                 bytes_read = fread(buff, sizeof(char), sizeof(buff), file);
             }
             fclose(file);
