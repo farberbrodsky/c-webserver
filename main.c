@@ -5,6 +5,7 @@
 #include <string.h>     // for memset
 #include <netdb.h>      // for addrinfo
 #include <errno.h>      // for erno
+#include <pthread.h>    // for threading
 
 #define PORT "8080"
 #define BACKLOG 3
@@ -39,12 +40,8 @@ char* get_mime_type(char* file_extension) {
     return "text/plain";
 }
 
-void accept_client(int sock_fd)
+void accept_client(int peer_fd)
 {
-    struct sockaddr_storage peer_address;
-    socklen_t peer_address_len = sizeof peer_address;
-    int peer_fd = accept(sock_fd, (struct sockaddr *)&peer_address, &peer_address_len);
-
     FILE *peer_stream = fdopen(peer_fd, "r+"); // convert to file to enable getline
 
     char *line = NULL;
@@ -114,11 +111,14 @@ int main()
 
     // listen for incoming connections
     listen(sock_fd, BACKLOG);
-
+    
     // accept loop
     while (1)
     {
-        accept_client(sock_fd);
+        struct sockaddr_storage peer_address;
+        socklen_t peer_address_len = sizeof peer_address;
+        int peer_fd = accept(sock_fd, (struct sockaddr *)&peer_address, &peer_address_len);
+        accept_client(peer_fd);
     }
 
     return 0;
